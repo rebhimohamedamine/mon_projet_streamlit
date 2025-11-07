@@ -7,13 +7,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 import joblib
 import os
+import sklearn
 
 def train_and_save_model():
     """
     Charge le dataset Iris, entraîne un modèle RandomForest et le sauvegarde
     """
     # 1. Charger le dataset Iris
-    # Si vous n'avez pas le fichier CSV, on peut le générer depuis sklearn
     from sklearn.datasets import load_iris
     
     # Créer le dossier data s'il n'existe pas
@@ -34,6 +34,7 @@ def train_and_save_model():
     print("Dataset Iris chargé avec succès!")
     print(f"Dimensions: {df.shape}")
     print(f"\nPremières lignes:\n{df.head()}")
+    print(f"\nVersion de scikit-learn: {sklearn.__version__}")
     
     # Préparer les données
     X = df.drop('species', axis=1)
@@ -41,17 +42,19 @@ def train_and_save_model():
     
     # 2. Diviser en ensembles d'entraînement et de test
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+        X, y, test_size=0.2, random_state=42, stratify=y
     )
     
     print(f"\nTaille ensemble d'entraînement: {len(X_train)}")
     print(f"Taille ensemble de test: {len(X_test)}")
     
-    # 3. Entraîner le modèle RandomForest
+    # 3. Entraîner le modèle RandomForest avec paramètres compatibles
     model = RandomForestClassifier(
         n_estimators=100,
         random_state=42,
-        max_depth=5
+        max_depth=5,
+        min_samples_split=2,
+        min_samples_leaf=1
     )
     
     print("\nEntraînement du modèle en cours...")
@@ -71,11 +74,19 @@ def train_and_save_model():
         target_names=iris.target_names
     ))
     
-    # 5. Sauvegarder le modèle
-    joblib.dump(model, 'iris_model.pkl')
-    print(f"\nModèle sauvegardé avec succès dans 'iris_model.pkl'")
+    # 5. Sauvegarder le modèle avec la version de scikit-learn
+    model_data = {
+        'model': model,
+        'sklearn_version': sklearn.__version__,
+        'feature_names': iris.feature_names,
+        'target_names': iris.target_names
+    }
     
-    # Sauvegarder également les noms des classes
+    joblib.dump(model_data, 'iris_model.pkl')
+    print(f"\nModèle sauvegardé avec succès dans 'iris_model.pkl'")
+    print(f"Version scikit-learn utilisée: {sklearn.__version__}")
+    
+    # Sauvegarder également les noms des classes (pour compatibilité)
     joblib.dump(iris.target_names, 'class_names.pkl')
     
     return model, accuracy
